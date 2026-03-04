@@ -1,0 +1,45 @@
+.user_count .wp-list-table {
+	border-collapse: collapse;
+	width: 98%;
+	border: 1px solid #E1E1E1;
+}
+
+.user_count .wp-list-table td,
+.user_count .wp-list-table th {
+	padding: 8px;
+}
+
+.user_count .wp-list-table tbody tr:hover {
+	background-color: #ddd;
+}
+
+.user_count .wp-list-table th {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	text-align: left;
+}
+
+.user_count .wp-list-table thead tr {
+	background: #fff;
+	color: #555555;
+	border: 1px solid #E1E1E1;
+}
+
+.user_count .wp-list-table tbody td strong a {
+	text-decoration: none;
+	font-size: 14px;
+}
+
+.user_count .wp-list-table tbody td {
+	color: #0073AE;
+	padding-top: 15px;
+	padding-bottom: 15px;
+}
+
+.user_count .wp-list-table tbody tr {
+	background: #fff;
+}
+
+.user_count .wp-list-table tbody tr:nth-child(even) {
+	background: #F9F9F9;
+}
