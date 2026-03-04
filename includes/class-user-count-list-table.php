@@ -1,0 +1,166 @@
+<?php
+/**
+ * User Count List Table.
+ *
+ * @package User_Count
+ */
+
+if ( ! class_exists( 'WP_List_Table' ) ) {
+	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
+}
+
+class User_Count_List_Table extends WP_List_Table {
+	public function __construct() {
+		parent::__construct(
+			array(
+				'singular' => 'user',
+				'plural'   => 'users',
+				'ajax'     => false,
+			)
+		);
+	}
+
+	public function get_columns() {
+		return array(
+			'name'    => __( 'Name', 'user-count' ),
+			'total'   => __( 'Total Posts', 'user-count' ),
+			'publish' => __( 'Published', 'user-count' ),
+			'future'  => __( 'Scheduled', 'user-count' ),
+		);
+	}
+
+	public function get_sortable_columns() {
+		return array(
+			'name'  => array( 'name', false ),
+			'total' => array( 'total', false ),
+		);
+	}
+
+	public function prepare_items( $from_date = '', $to_date = '' ) {
+		$columns  = $this->get_columns();
+		$hidden   = array();
+		$sortable = $this->get_sortable_columns();
+
+		$this->_column_headers = array( $columns, $hidden, $sortable );
+
+		$users = get_users(
+			array(
+				'role'    => 'editor',
+				'orderby' => 'display_name',
+				'order'   => 'ASC',
+			)
+		);
+
+		$date_query = array();
+		if ( ! empty( $from_date ) && ! empty( $to_date ) ) {
+			$date_query[] = array(
+				'after'     => $from_date,
+				'before'    => $to_date,
+				'inclusive' => true,
+			);
+		}
+
+		$items = array();
+
+		foreach ( $users as $user ) {
+			$base_args = array(
+				'post_type'              => 'post',
+				'author'                 => $user->ID,
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			);
+
+			if ( ! empty( $date_query ) ) {
+				$base_args['date_query'] = $date_query;
+			}
+
+			$publish_args              = $base_args;
+			$publish_args['post_status'] = 'publish';
+			$publish_posts             = get_posts( $publish_args );
+			$publish_count             = count( $publish_posts );
+
+			$future_args              = $base_args;
+			$future_args['post_status'] = 'future';
+			$future_posts             = get_posts( $future_args );
+			$future_count             = count( $future_posts );
+
+			$items[] = array(
+				'id'      => $user->ID,
+				'name'    => $user->display_name,
+				'total'   => $publish_count + $future_count,
+				'publish' => $publish_count,
+				'future'  => $future_count,
+			);
+		}
+
+		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : 'name';
+		$order   = isset( $_GET['order'] ) ? sanitize_key( wp_unslash( $_GET['order'] ) ) : 'asc';
+
+		$allowed_orderby = array( 'name', 'total' );
+		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'name';
+		}
+
+		if ( 'desc' !== $order ) {
+			$order = 'asc';
+		}
+
+		usort(
+			$items,
+			static function ( $first, $second ) use ( $orderby, $order ) {
+				if ( 'total' === $orderby ) {
+					$result = (int) $first['total'] <=> (int) $second['total'];
+				} else {
+					$result = strcasecmp( $first['name'], $second['name'] );
+				}
+
+				if ( 'desc' === $order ) {
+					$result = -$result;
+				}
+
+				return $result;
+			}
+		);
+
+		$per_page     = 20;
+		$current_page = $this->get_pagenum();
+		$total_items  = count( $items );
+
+		$this->items = array_slice( $items, ( $current_page - 1 ) * $per_page, $per_page );
+
+		$this->set_pagination_args(
+			array(
+				'total_items' => $total_items,
+				'per_page'    => $per_page,
+				'total_pages' => (int) ceil( $total_items / $per_page ),
+			)
+		);
+	}
+
+	public function column_name( $item ) {
+		$url = add_query_arg(
+			array(
+				'post_type' => 'post',
+				'author'    => $item['id'],
+			),
+			admin_url( 'edit.php' )
+		);
+
+		return sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( $url ),
+			esc_html( $item['name'] )
+		);
+	}
+
+	public function column_default( $item, $column_name ) {
+		return esc_html( $item[ $column_name ] );
+	}
+
+	public function column_total( $item ) {
+		return esc_html( $item['total'] );
+	}
+}

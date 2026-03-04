@@ -1,106 +1,59 @@
-<h1>Count Editor All Posts</h1>
-<form method="post">
-<input type="date" name="from_date"><input type="date" name="to_date"><input type="submit" name="submit" value="Search">
-</form>
 <?php
-$args = array(
-    'role'    => 'editor',
-    'orderby' => 'nicename',
-    'order'   => 'ASC'
-);
-$users = get_users( $args );
-
-echo '<table class="user_count">';
-echo '<tr class="role_head">';
-echo '<th>Name</th><th>Total Posts</th><th>Publish</th><th>Schedule</th>';
-echo '</tr>';
-foreach ( $users as $user ) {
-    
-    $user->ID ;
-   	
-   	$user->display_name;
-    
- 	$publish= array(
- 					      'post_type' => 'post',
-              		'post_status' => 'publish',
-              		'author' =>$user->ID
-              	);
-     $publish_user_posts = get_posts( $publish );
-
-     $publish_post = count($publish_user_posts);
-
-     $future= array(	'post_type' => 'post',
-              		'post_status' => 'future',
-              		'author' =>$user->ID
-              	);
-     $future_user_posts = get_posts( $future );
-
-     $future_post = count($future_user_posts);
-	
-	
-	  $allPosts= $publish_post+	$future_post;
-     echo '<tr class="role_body"><td><strong><a href="'.get_site_url().'/wp-admin/edit.php?post_type=post&author='.$user->ID.'">'.$user->display_name.'</a></strong></td><td>'.$allPosts.'</td><td>'.$publish_post.'</td><td>'.$future_post.'</td>';
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( __( 'Insufficient permissions.', 'user-count' ) );
 }
-echo '</table>';
 
-if(isset($_POST["submit"])){
+$from_date = '';
+$to_date   = '';
 
-  $from_date = $_POST['from_date'];
-  $to_date = $_POST['to_date'];
+$has_submit = isset( $_GET['from_date'] ) || isset( $_GET['to_date'] );
 
- $args = array(
-    'role'    => 'editor',
-    'orderby' => 'nicename',
-    'order'   => 'ASC'
-);
-$users = get_users( $args );
+if ( $has_submit ) {
+	$nonce = isset( $_GET['user_count_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['user_count_nonce'] ) ) : '';
 
-echo '<table class="user_count">';
-echo '<tr class="role_head">';
-echo '<th>Name</th><th>Total Posts</th><th>Publish</th><th>Schedule</th>';
-echo '</tr>';
-foreach ( $users as $user ) {
-    
-    $user->ID ;
-    
-    $user->display_name;
-    
-  $publish= array(
-                'post_type' => 'post',
-                  'post_status' => 'publish',
-                  'author' =>$user->ID,
-                    'date_query' => array(
-              array(
-                  'after'     => $from_date,
-                  'before'    => $to_date
-                
-                ))
-                );
-            
-     $publish_user_posts = get_posts( $publish );
+	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'user_count_search' ) ) {
+		wp_die( __( 'Invalid nonce.', 'user-count' ) );
+	}
 
-     $publish_post = count($publish_user_posts);
+	$from_raw = isset( $_GET['from_date'] ) ? sanitize_text_field( wp_unslash( $_GET['from_date'] ) ) : '';
+	$to_raw   = isset( $_GET['to_date'] ) ? sanitize_text_field( wp_unslash( $_GET['to_date'] ) ) : '';
 
-     $future= array(  'post_type' => 'post',
-                  'post_status' => 'future',
-                  'author' =>$user->ID,
-                    'date_query' => array(
-              array(
-                  'after'     => $from_date,
-                  'before'    => $to_date
-                
-                )
-                
-                ));
-               
-     $future_user_posts = get_posts( $future );
+	$validate_date = static function ( $value ) {
+		if ( '' === $value ) {
+			return '';
+		}
 
-     $future_post = count($future_user_posts);
-  
-  
-    $allPosts= $publish_post+ $future_post;
-     echo '<tr class="role_body"><td><strong><a href="'.get_site_url().'/wp-admin/edit.php?post_type=post&author='.$user->ID.'">'.$user->display_name.'</a></strong></td><td>'.$allPosts.'</td><td>'.$publish_post.'</td><td>'.$future_post.'</td>';
+		$date = DateTime::createFromFormat( 'Y-m-d', $value );
+		if ( $date && $date->format( 'Y-m-d' ) === $value ) {
+			return $value;
+		}
+
+		return '';
+	};
+
+	$from_date = $validate_date( $from_raw );
+	$to_date   = $validate_date( $to_raw );
 }
-echo '</table>';
 
-}
+$table = new User_Count_List_Table();
+$table->prepare_items( $from_date, $to_date );
+?>
+
+<div class="wrap user_count">
+	<h1 class="wp-heading-inline"><?php esc_html_e( 'User Count', 'user-count' ); ?></h1>
+
+	<form method="get" class="user-count-filter">
+		<?php wp_nonce_field( 'user_count_search', 'user_count_nonce' ); ?>
+		<input type="hidden" name="page" value="editor_counter" />
+
+		<label for="from_date"><?php esc_html_e( 'From', 'user-count' ); ?></label>
+		<input type="date" id="from_date" name="from_date" value="<?php echo esc_attr( $from_date ); ?>" />
+
+		<label for="to_date"><?php esc_html_e( 'To', 'user-count' ); ?></label>
+		<input type="date" id="to_date" name="to_date" value="<?php echo esc_attr( $to_date ); ?>" />
+
+		<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'user-count' ); ?>" />
+	</form>
+
+	<?php $table->display(); ?>
+</div>
