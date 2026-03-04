@@ -94,9 +94,8 @@ class User_Count_List_Table extends WP_List_Table {
 			$base_args = array(
 				'post_type'              => 'post',
 				'author'                 => $user->ID,
-				'posts_per_page'         => -1,
 				'fields'                 => 'ids',
-				'no_found_rows'          => true,
+				'no_found_rows'          => false,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
 			);
@@ -105,15 +104,19 @@ class User_Count_List_Table extends WP_List_Table {
 				$base_args['date_query'] = $date_query;
 			}
 
-			$publish_args              = $base_args;
-			$publish_args['post_status'] = 'publish';
-			$publish_posts             = get_posts( $publish_args );
-			$publish_count             = count( $publish_posts );
+			$publish_args                 = $base_args;
+			$publish_args['post_status']   = 'publish';
+			$publish_args['posts_per_page'] = 1;
+			$publish_query                = new WP_Query( $publish_args );
+			$publish_count                = (int) $publish_query->found_posts;
+			wp_reset_postdata();
 
-			$future_args              = $base_args;
-			$future_args['post_status'] = 'future';
-			$future_posts             = get_posts( $future_args );
-			$future_count             = count( $future_posts );
+			$future_args                 = $base_args;
+			$future_args['post_status']   = 'future';
+			$future_args['posts_per_page'] = 1;
+			$future_query                = new WP_Query( $future_args );
+			$future_count                = (int) $future_query->found_posts;
+			wp_reset_postdata();
 
 			$items[] = array(
 				'id'      => $user->ID,
