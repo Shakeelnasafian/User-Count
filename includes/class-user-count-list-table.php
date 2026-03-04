@@ -10,6 +10,11 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 }
 
 class User_Count_List_Table extends WP_List_Table {
+	/**
+	 * Initialize the list table with labels and behavior for listing users.
+	 *
+	 * Sets the table's singular label to "user", plural label to "users", and disables AJAX.
+	 */
 	public function __construct() {
 		parent::__construct(
 			array(
@@ -20,6 +25,11 @@ class User_Count_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Get the list table's columns and their display labels.
+	 *
+	 * @return array<string,string> Associative array mapping column keys to their label strings.
+	 */
 	public function get_columns() {
 		return array(
 			'name'    => __( 'Name', 'user-count' ),
@@ -29,6 +39,13 @@ class User_Count_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Define sortable columns for the list table.
+	 *
+	 * @return array<string, array{0:string,1:bool}> Associative array mapping column keys to an array where
+	 *         element 0 is the corresponding orderby value and element 1 is a boolean indicating
+	 *         whether that column is the default sort (true) or not (false).
+	 */
 	public function get_sortable_columns() {
 		return array(
 			'name'  => array( 'name', false ),
@@ -36,6 +53,17 @@ class User_Count_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Populate the list table with editor users and their post counts, applying optional date filtering, sorting, and pagination.
+	 *
+	 * When both $from_date and $to_date are provided, only posts within the inclusive date range are counted.
+	 * The method sets up column headers, collects published and scheduled (future) post counts per editor,
+	 * sorts the results by name or total posts (asc/desc), applies pagination (20 items per page), and assigns
+	 * the current page items to $this->items and pagination arguments via set_pagination_args().
+	 *
+	 * @param string $from_date Optional start date for post counting. Used only if $to_date is also provided.
+	 * @param string $to_date   Optional end date for post counting. Used only if $from_date is also provided.
+	 */
 	public function prepare_items( $from_date = '', $to_date = '' ) {
 		$columns  = $this->get_columns();
 		$hidden   = array();
@@ -140,6 +168,12 @@ class User_Count_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Render the Name column as a link to the admin posts list filtered by the user.
+	 *
+	 * @param array $item Associative array representing the row; must contain 'id' (user ID) and 'name' (display name).
+	 * @return string The HTML anchor linking to the posts admin filtered by the author, with the user's display name as the link text.
+	 */
 	public function column_name( $item ) {
 		$url = add_query_arg(
 			array(
@@ -156,10 +190,23 @@ class User_Count_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Render a default column value for a table row when no specific column handler exists.
+	 *
+	 * @param array  $item        Row data array containing columns keyed by column name.
+	 * @param string $column_name The column key to render.
+	 * @return string The column value escaped for safe HTML output.
+	 */
 	public function column_default( $item, $column_name ) {
 		return esc_html( $item[ $column_name ] );
 	}
 
+	/**
+	 * Render the total post count for a table row.
+	 *
+	 * @param array $item Row data containing a 'total' numeric count.
+	 * @return string The 'total' value escaped for HTML output.
+	 */
 	public function column_total( $item ) {
 		return esc_html( $item['total'] );
 	}
