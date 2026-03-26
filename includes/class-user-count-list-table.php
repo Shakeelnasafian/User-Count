@@ -36,6 +36,7 @@ class User_Count_List_Table extends WP_List_Table {
 			'total'   => __( 'Total Posts', 'user-count' ),
 			'publish' => __( 'Published', 'user-count' ),
 			'future'  => __( 'Scheduled', 'user-count' ),
+			'draft'   => __( 'Drafts', 'user-count' ),
 		);
 	}
 
@@ -118,12 +119,20 @@ class User_Count_List_Table extends WP_List_Table {
 			$future_count                = (int) $future_query->found_posts;
 			wp_reset_postdata();
 
+			$draft_args                  = $base_args;
+			$draft_args['post_status']   = 'draft';
+			$draft_args['posts_per_page'] = 1;
+			$draft_query                 = new WP_Query( $draft_args );
+			$draft_count                 = (int) $draft_query->found_posts;
+			wp_reset_postdata();
+
 			$items[] = array(
 				'id'      => $user->ID,
 				'name'    => $user->display_name,
-				'total'   => $publish_count + $future_count,
+				'total'   => $publish_count + $future_count + $draft_count,
 				'publish' => $publish_count,
 				'future'  => $future_count,
+				'draft'   => $draft_count,
 			);
 		}
 
