@@ -43,3 +43,19 @@
 .user_count .wp-list-table tbody tr:nth-child(even) {
 	background: #F9F9F9;
 }
+
+.user_count .user-count-filter {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 0;
+	flex-wrap: wrap;
+}
+
+.user_count .user-count-filter label {
+	font-weight: 600;
+}
+
+.user_count .user-count-reset {
+	text-decoration: none;
+}

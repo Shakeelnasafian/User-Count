@@ -52,7 +52,8 @@ $table->prepare_items( $from_date, $to_date );
 		<label for="to_date"><?php esc_html_e( 'To', 'user-count' ); ?></label>
 		<input type="date" id="to_date" name="to_date" value="<?php echo esc_attr( $to_date ); ?>" />
 
-		<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'user-count' ); ?>" />
+		<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Filter', 'user-count' ); ?>" />
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=editor_counter' ) ); ?>" class="button user-count-reset"><?php esc_html_e( 'Reset', 'user-count' ); ?></a>
 	</form>
 
 	<?php $table->display(); ?>
